@@ -1,0 +1,1 @@
+{% extends 'gallery/base.html' %}{% block content %}<section class="container narrow"><form method="post" class="form">{% csrf_token %}<h1>Log in</h1><label>Username<input name="username" required></label><label>Password<input type="password" name="password" required></label><button class="btn">Log in</button></form></section>{% endblock %}

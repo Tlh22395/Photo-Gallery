@@ -1,0 +1,64 @@
+{% extends "gallery/base.html" %}
+
+{% block content %}
+<section class="container">
+    <a href="{% url 'home' %}">← Albums</a>
+
+    <h1>{{ album.title }}</h1>
+    <p>{{ album.description }}</p>
+
+    <div class="grid photos">
+        {% for photo in album.photos.all %}
+            <article class="card">
+                <div class="preview">
+                    {% if photo.image %}
+                        <img
+                            src="{{ photo.image.url }}"
+                            alt="{{ photo.title|default:'Photo preview' }}"
+                        >
+                    {% endif %}
+
+                    <span>PREVIEW</span>
+                </div>
+
+                <div class="pad">
+                    <strong>
+                        {{ photo.title|default:"Untitled" }}
+                    </strong>
+
+                    {% if user.is_authenticated %}
+    {% if photo.id in purchased_photo_ids %}
+        <a
+            class="button"
+            href="{% url 'download_photo' photo.id %}"
+        >
+            Download
+        </a>
+    {% else %}
+        <form
+            method="post"
+            action="{% url 'create_checkout_session' photo.id %}"
+        >
+            {% csrf_token %}
+
+            <button class="button" type="submit">
+                Buy for ${{ photo.price_display|floatformat:2 }}
+            </button>
+        </form>
+    {% endif %}
+{% else %}
+    <a
+        class="button"
+        href="{% url 'login' %}?next={{ request.get_full_path|urlencode }}"
+    >
+        Log in to purchase
+    </a>
+{% endif %}
+                </div>
+            </article>
+        {% empty %}
+            <p>No photos yet.</p>
+        {% endfor %}
+    </div>
+</section>
+{% endblock %}

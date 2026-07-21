@@ -1,0 +1,1 @@
+{% extends 'gallery/base.html' %}{% block content %}<section class="container narrow"><form method="post" class="form">{% csrf_token %}<h1>Delete item</h1><p>Delete “{{ object }}”?</p><button class="btn danger">Delete</button> <a href="{% url 'dashboard' %}">Cancel</a></form></section>{% endblock %}

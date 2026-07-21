@@ -1,0 +1,1 @@
+{% extends 'gallery/base.html' %}{% block content %}<section class="container narrow"><form method="post" class="form">{% csrf_token %}<h1>Create account</h1>{{ form.as_p }}<button class="btn">Create account</button></form></section>{% endblock %}

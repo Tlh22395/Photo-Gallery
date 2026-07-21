@@ -1,0 +1,1 @@
+{% extends 'gallery/base.html' %}{% block content %}<section class="container narrow"><h1>{{ title }}</h1><form method="post" enctype="multipart/form-data" class="form">{% csrf_token %}{{ form.as_p }}<button class="btn">Save</button> <a href="{% url 'dashboard' %}">Cancel</a></form></section>{% endblock %}
