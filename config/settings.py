@@ -61,4 +61,11 @@ STATIC_ROOT = BASE_DIR / "staticfiles"
 STATICFILES_DIRS = [
     BASE_DIR / "static",
 ]
-
+ALLOWED_HOSTS = [
+    "photo-gallery-eiip.onrender.com",
+    "localhost",
+    "127.0.0.1",
+]
+CSRF_TRUSTED_ORIGINS = [
+    "https://photo-gallery-eiip.onrender.com",
+]
