@@ -65,10 +65,12 @@ ALLOWED_HOSTS = [
     "photo-gallery-eiip.onrender.com",
     "localhost",
     "127.0.0.1",
+    "photo-gallery-2cpq.onrender.com"
 ]
 CSRF_TRUSTED_ORIGINS = [
     "https://photo-gallery-eiip.onrender.com",
-    "https://photo-gallery-2cpq.onrender.com/"
+    "https://photo-gallery-2cpq.onrender.com/",
+    
 ]
 
 import os
