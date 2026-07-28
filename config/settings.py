@@ -85,11 +85,9 @@ DEFAULT_FROM_EMAIL = os.getenv(
 )
 
 SITE_URL = os.getenv(
-    "SITE_URL",
-    "http://127.0.0.1:8000",
+    "SITE_URL"
 )
 
 SITE_NAME = os.getenv(
-    "SITE_NAME",
-    "Event Photo Gallery",
+    "SITE_NAME"
 )
