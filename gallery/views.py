@@ -162,10 +162,27 @@ def payment_success(request):
     return render(request, "gallery/payment_success.html")
 
 
+# gallery/views.py
+
+import stripe
+
+from django.conf import settings
+from django.db import transaction
+from django.http import HttpResponse
+from django.utils import timezone
+from django.views.decorators.csrf import csrf_exempt
+
+from .emails import send_purchase_download_email
+from .models import Purchase
+
+
 @csrf_exempt
 def stripe_webhook(request):
     payload = request.body
-    signature = request.META.get("HTTP_STRIPE_SIGNATURE")
+    signature = request.META.get(
+        "HTTP_STRIPE_SIGNATURE",
+        "",
+    )
 
     try:
         event = stripe.Webhook.construct_event(
@@ -178,18 +195,64 @@ def stripe_webhook(request):
     except stripe.error.SignatureVerificationError:
         return HttpResponse(status=400)
 
-    if event["type"] == "checkout.session.completed":
+    if event["type"] in {
+        "checkout.session.completed",
+        "checkout.session.async_payment_succeeded",
+    }:
         session = event["data"]["object"]
-        purchase_id = session.get("metadata", {}).get("purchase_id")
 
-        if purchase_id:
-            Purchase.objects.filter(
-                id=purchase_id,
-                stripe_session_id=session["id"],
-            ).update(
-                status="paid",
-                paid_at=timezone.now(),
-            )
+        purchase_id = session.get(
+            "metadata",
+            {},
+        ).get("purchase_id")
+
+        payment_status = session.get("payment_status")
+
+        if purchase_id and payment_status == "paid":
+            with transaction.atomic():
+                purchase = (
+                    Purchase.objects
+                    .select_for_update()
+                    .select_related(
+                        "user",
+                        "photo",
+                        "photo__album",
+                    )
+                    .get(pk=purchase_id)
+                )
+
+                if purchase.stripe_session_id != session["id"]:
+                    return HttpResponse(status=400)
+
+                if purchase.status != "paid":
+                    purchase.status = "paid"
+                    purchase.paid_at = timezone.now()
+                    purchase.save(
+                        update_fields=[
+                            "status",
+                            "paid_at",
+                        ]
+                    )
+
+                should_send_email = (
+                    not purchase.download_email_sent
+                )
+
+            if should_send_email:
+                try:
+                    send_purchase_download_email(purchase)
+
+                    Purchase.objects.filter(
+                        pk=purchase.pk,
+                        download_email_sent=False,
+                    ).update(
+                        download_email_sent=True,
+                        download_email_sent_at=timezone.now(),
+                    )
+                except Exception:
+                    # Log this in production.
+                    # Returning 500 allows Stripe to retry.
+                    return HttpResponse(status=500)
 
     return HttpResponse(status=200)
 
@@ -245,4 +308,71 @@ def multiple_photo_upload(request):
             "form": form,
             "title": "Upload multiple photos",
         },
+    )
+
+from pathlib import Path
+
+from django.core import signing
+from django.http import FileResponse, Http404, HttpResponse
+from django.shortcuts import get_object_or_404
+
+from .download_tokens import read_download_token
+from .models import DownloadRecord, Purchase
+
+
+def purchase_download(request, token):
+    try:
+        purchase_id = read_download_token(
+            token,
+            max_age_seconds=60 * 60 * 24 * 7,
+        )
+    except signing.SignatureExpired:
+        return HttpResponse(
+            "This download link has expired.",
+            status=410,
+        )
+    except signing.BadSignature:
+        return HttpResponse(
+            "This download link is invalid.",
+            status=400,
+        )
+
+    purchase = get_object_or_404(
+        Purchase.objects.select_related(
+            "photo",
+            "photo__album",
+            "user",
+        ),
+        pk=purchase_id,
+        status="paid",
+    )
+
+    photo = purchase.photo
+
+    if not photo.is_downloadable:
+        return HttpResponse(
+            "Downloads are disabled for this photo.",
+            status=403,
+        )
+
+    try:
+        file_path = Path(photo.image.path)
+    except NotImplementedError:
+        raise Http404(
+            "Direct file streaming is not configured "
+            "for remote storage."
+        )
+
+    if not file_path.exists():
+        raise Http404("The photo file could not be found.")
+
+    DownloadRecord.objects.create(
+        user=purchase.user,
+        photo=photo,
+    )
+
+    return FileResponse(
+        open(file_path, "rb"),
+        as_attachment=True,
+        filename=file_path.name,
     )

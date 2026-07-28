@@ -70,3 +70,8 @@ urlpatterns = [
     name="multiple_photo_upload",
 ),
 ]
+path(
+    "purchase/download/<str:token>/",
+    views.purchase_download,
+    name="purchase_download",
+),

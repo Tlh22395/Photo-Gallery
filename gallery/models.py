@@ -44,6 +44,12 @@ class DownloadRecord(models.Model):
     photo=models.ForeignKey(Photo,on_delete=models.CASCADE)
     downloaded_at=models.DateTimeField(auto_now_add=True)
 
+# gallery/models.py
+
+from django.db import models
+from django.contrib.auth.models import User
+
+
 class Purchase(models.Model):
     STATUS_CHOICES = [
         ("pending", "Pending"),
@@ -52,20 +58,26 @@ class Purchase(models.Model):
     ]
 
     user = models.ForeignKey(User, on_delete=models.CASCADE)
-    photo = models.ForeignKey(Photo, on_delete=models.CASCADE)
+    photo = models.ForeignKey("Photo", on_delete=models.CASCADE)
+
     stripe_session_id = models.CharField(
         max_length=255,
         unique=True,
         null=True,
-        blank=True
+        blank=True,
     )
+
     status = models.CharField(
         max_length=20,
         choices=STATUS_CHOICES,
-        default="pending"
+        default="pending",
     )
-    created_at = models.DateTimeField(auto_now_add=True)
+
     paid_at = models.DateTimeField(null=True, blank=True)
+    download_email_sent = models.BooleanField(default=False)
+    download_email_sent_at = models.DateTimeField(null=True, blank=True)
+
+    created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return f"{self.user} - {self.photo} - {self.status}"
+        return f"{self.user.username} - {self.photo} - {self.status}"
