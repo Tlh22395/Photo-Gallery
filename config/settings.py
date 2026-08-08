@@ -51,6 +51,10 @@ load_dotenv()
 STRIPE_SECRET_KEY = os.getenv("STRIPE_SECRET_KEY")
 STRIPE_PUBLISHABLE_KEY = os.getenv("STRIPE_PUBLISHABLE_KEY")
 STRIPE_WEBHOOK_SECRET = os.getenv("STRIPE_WEBHOOK_SECRET")
+SECRET_KEY = os.getenv(
+    "DJANGO_SECRET_KEY",
+    "django-insecure-local-development-only",
+)
 from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -69,6 +73,7 @@ ALLOWED_HOSTS = [
 CSRF_TRUSTED_ORIGINS = [
     "https://photo-gallery-eiip.onrender.com",
     "https://photo-gallery-2cpq.onrender.com/",
+    
     
 ]
 
