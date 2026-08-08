@@ -140,8 +140,9 @@ def create_checkout_session(request, photo_id):
         reverse("album_detail", args=[photo.album.slug])
     ),
     metadata={
-        "photo_id": str(photo.id),
-        "user_id": str(request.user.id),
+        "purchase_id": str(purchase.id),
+    "photo_id": str(photo.id),
+    "user_id": str(request.user.id),
     },
 )
     except stripe.StripeError as exc:
@@ -277,9 +278,8 @@ def multiple_photo_upload(request):
             is_downloadable = form.cleaned_data[
                 "is_downloadable"
             ]
-            price_cents = form.cleaned_data[
-                "price_cents"
-            ]
+            price = form.cleaned_data["price"]
+            price_cents = int(price * 100)
 
             created_count = 0
 
@@ -376,3 +376,5 @@ def purchase_download(request, token):
         as_attachment=True,
         filename=file_path.name,
     )
+
+print("Stripe key:", settings.STRIPE_SECRET_KEY)
